@@ -12,7 +12,7 @@ router.get("/", (req, res, next) => {
   // res.sendFile(path.join(rootDir, "views", "shop.html"));
   //! buradada pug dosyasını yönlendiriyoruz
   const products = adminData.products;
-  res.render("shop",{prods : products , docTitle:"Shop", path:"/"});
+  res.render("shop",{prods : products , docTitle:"Shop", path:"/", hasproducts : products.length > 0});
 });
 
 module.exports = router;
