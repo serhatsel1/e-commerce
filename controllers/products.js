@@ -1,7 +1,6 @@
-const products = [];
+const Product = require("../model/product");
 
 exports.getAddProduct = (req, res, next) => {
-  // console.log("add-product");
   //! Html Sayfası içim
   // res.sendFile(path.join(rootDir,"views","add-product.html"))
   //! Pug sayfası için
@@ -12,13 +11,13 @@ exports.getAddProduct = (req, res, next) => {
 };
 
 exports.postAddProducts = (req, res, next) => {
-  products.push({
-    title: req.body.title,
-  });
+  const product = new Product(req.body.title);
+  product.save();
   res.redirect("/");
 };
 
 exports.getProduct = (req, res, next) => {
+  const products = Product.fetchAll();
   // console.log("selamm");
   // res.send("<h1>Hello From express !!</h1>");
   //!Html sayfasını yönledirmee
@@ -31,5 +30,3 @@ exports.getProduct = (req, res, next) => {
     path: "/",
   });
 };
-
-
