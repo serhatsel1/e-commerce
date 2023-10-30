@@ -17,16 +17,17 @@ exports.postAddProducts = (req, res, next) => {
 };
 
 exports.getProduct = (req, res, next) => {
-  const products = Product.fetchAll();
-  // console.log("selamm");
-  // res.send("<h1>Hello From express !!</h1>");
-  //!Html sayfasını yönledirmee
-  // console.log("shop.js",adminData.product);
-  // res.sendFile(path.join(rootDir, "views", "shop.html"));
-  //! buradada pug dosyasını yönlendiriyoruz
-  res.render("shop", {
-    prods: products,
-    pageTitle: "Shop",
-    path: "/",
+  const products = Product.fetchAll((products) => {
+    res.render("shop", {
+      prods: products,
+      pageTitle: "Shop",
+      path: "/",
+    });
+    // console.log("selamm");
+    // res.send("<h1>Hello From express !!</h1>");
+    //!Html sayfasını yönledirmee
+    // console.log("shop.js",adminData.product);
+    // res.sendFile(path.join(rootDir, "views", "shop.html"));
+    //! buradada pug dosyasını yönlendiriyoruz
   });
 };
