@@ -13,6 +13,13 @@ body {
 main {
   padding: 1rem;
   margin: auto;
+} 
+form {
+  display: inline;
+}
+
+.centered {
+  text-align: center;
 }
 
 .main-header {
@@ -20,6 +27,8 @@ main {
   height: 3.5rem;
   background-color: #00695c;
   padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .main-header__nav {
