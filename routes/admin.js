@@ -1,7 +1,6 @@
 const path = require("path");
 
 const express = require("express");
-//! dosya yolunu mainden çektik
 
 const adminControllers = require("../controllers/admin")
 
@@ -13,7 +12,11 @@ router.get("/add-product",adminControllers.getAddProduct);
 //! admin/products => GET
 router.get("/product", adminControllers.getProduct)
 //! admin/add-product => POST
-router.post("/add-product",adminControllers.postAddProducts);
+router.post("/add-product", adminControllers.postAddProducts);
+
+router.get("/edit-product/:productId", adminControllers.getEditProduct);
+
+router.get("/edit-product");
 
 module.exports = router;
 // exports.routes = router;
