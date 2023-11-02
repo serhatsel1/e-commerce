@@ -1,11 +1,11 @@
 const Product = require("../model/product");
-const Cart = require("../model/cart")
+const Cart = require("../model/cart");
 
 exports.getProducts = (req, res, next) => {
   Product.fetchAll((products) => {
     res.render("shop/product-list", {
       prods: products,
-      pageTitle: "All Product",
+      pageTitle: "All Products",
       path: "/products",
     });
     // console.log("selamm");
@@ -39,30 +39,42 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
-  res.render("shop/cart", {
-    pageTitle: "Your Card",
-    path: "/cart",
+  Cart.getCart((cart) => {
+    Product.fetchAll((product) => {
+      const cartProducts = [];
+      for (product of products) {
+        const cartProductData = cart.products.find((prod) => prod.id === product.id)
+        if (cartProductData) {
+          cartProducts.push({productData: product ,qty: cartProductData.qty});
+        }
+      }
+      res.render("shop/cart", {
+        path: "/cart",
+        pageTitle: "Your Cart",
+        products: cartProducts
+      });
+    });
   });
 };
 
-exports.postCard = (req,res,next) => {
+exports.postCard = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findById(prodId,(product) =>{
-    Cart.addProduct(prodId,product.price)
-  })
+  Product.findById(prodId, (product) => {
+    Cart.addProduct(prodId, product.price);
+  });
   res.redirect("/cart");
-}
+};
+
+exports.getOrders = (req, res, next) => {
+  res.render("shop/orders", {
+    path: "/orders",
+    pageTitle: "Your Orders",
+  });
+};
 
 exports.getCheckout = (req, res, next) => {
   res.render("shop/checkout", {
     path: "/checkout",
     pageTitle: "Checkout",
-  });
-};
-
-exports.getOrders = (req, res, next) => {
-  res.render("shop/orders", {
-    pageTitle: "Orders",
-    path: "/orders",
   });
 };
