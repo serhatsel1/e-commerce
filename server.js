@@ -16,13 +16,7 @@ const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const err404Routes = require("./routes/err404");
 
-db.execute("SELECT * FROM  products")
-  .then((result) => {
-    console.log("database result :",result[0],result[1]);
-  })
-  .catch((err) => {
-    console.log("err:",err);
-  });
+
 
 const hostName = "127.0.0.1";
 const port = 3000;
