@@ -1,11 +1,12 @@
 const path = require("path");
+const dotenv = require("dotenv").config();
 
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
 const errorController = require("./controllers/error");
-// const User = require('./models/user');
+const User = require("./model/user");
 
 const app = express();
 
@@ -30,15 +31,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
-  // User.findByPk(1)
-  //   .then((user) => {
-  //     req.user = user;
-  //     next();
-  //   })
-  //   .catch((err) => {
-  //     console.log(err);
-  //   });
-  next();
+  User.findById("655a60adf536f70dc27508f6")
+    .then((user) => {
+      req.user = user;
+      next();
+    })
+    .catch((err) => console.log(err));
 });
 
 //! dosyalardan veri çekme
@@ -47,17 +45,23 @@ app.use(shopRoutes);
 app.use(err404Routes);
 
 mongoose
-  .connect(
-    "mongodb+srv://selserhat01:56530474958s@cluster0.vyic7gs.mongodb.net/shop?retryWrites=true&w=majority"
-  )
+  .connect(process.env.DB_ACCESS)
   .then((result) => {
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: "Serhat",
+          email: process.env.MAIL,
+          cart: {
+            items: [],
+          },
+        });
+        user.save();
+      }
+    });
     app.listen(3000);
     console.log("Connected to MongoDB");
   })
   .catch((err) => {
     console.log(err);
   });
-
-// mongoConnect(() => {
-//   app.listen(port);
-// });
