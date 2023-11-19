@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const product = require("./product");
+
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   name: {
@@ -20,11 +20,31 @@ const userSchema = new Schema({
           ref: "Product",
           required: true,
         },
-        quantity: { type: Number, reuqired: true },
+        quantity: { type: Number, required: true },
       },
     ],
   },
 });
+
+userSchema.methods.addToCart = function(product) {
+  // Kullanıcının sepetinde eklemek istediği ürünün index'ini bulma
+  const cartProduct = this.cart.items.find(item => item.productId.toString() === product._id.toString());
+
+  // Eğer ürün sepette varsa, miktarını bir artır, yoksa yeni bir ürünü sepete ekle
+  if (cartProduct) {
+    cartProduct.quantity += 1;
+  } else {
+    this.cart.items.push({
+      productId: product._id,
+      quantity: 1
+    });
+  }
+
+  // Kullanıcının sepetini kaydet
+  return this.save();
+};
+
+
 
 module.exports = mongoose.model("User", userSchema);
 
