@@ -1,4 +1,5 @@
 const Product = require("../model/product");
+const Order = require("../model/order");
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -78,25 +79,40 @@ exports.postCartDelete = (req, res, next) => {
     .catch((err) => console.log(err));
 };
 
-exports.postOrder = (req, res, next) => {
-  let fetchedCart;
-  req.user
-    .addOrder()
-    .then((result) => {
-      res.redirect("/orders");
-    })
-    .catch((err) => console.log(err));
+exports.postOrder = async (req, res, next) => {
+  try {
+    const user = await req.user.populate("cart.items.productId");
+
+    const products = user.cart.items.map(async (i) => {
+      await { quantity: i.quantity, product: i.productId };
+    });
+
+    const order = new Order({
+      user: {
+        name: req.user.name,
+        userId: req.user,
+      },
+      products: products,
+    });
+
+    const result = await order.save();
+    await req.user.clearCart();
+    res.redirect("/orders");
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-exports.getOrders = (req, res, next) => {
-  req.user
-    .getOrders()
-    .then((orders) => {
-      res.render("shop/orders", {
-        path: "/orders",
-        pageTitle: "Your Orders",
-        orders: orders,
-      });
-    })
-    .catch((err) => console.log(err));
+exports.getOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({ "user.userId": req.user._id });
+
+    res.render("shop/orders", {
+      path: "/orders",
+      pageTitle: "Your Orders",
+      orders: orders,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };

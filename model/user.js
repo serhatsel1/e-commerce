@@ -48,9 +48,14 @@ userSchema.methods.addToCart = function (product) {
 userSchema.methods.removeCartItem = function (productId) {
   const updateCartItems = this.cart.items.filter((item) => {
     return item.productId.toString() !== productId.toString();
-  }); 
+  });
   this.cart.items = updateCartItems;
 
+  return this.save();
+};
+
+userSchema.methods.clearCart = function () {
+  this.cart = { items: [] };
   return this.save();
 };
 

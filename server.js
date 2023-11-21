@@ -28,7 +28,8 @@ const port = 3000;
 app.use(bodyParser.urlencoded({ extended: true }));
 
 //! static olan css dosyaları için
-app.use(express.static(path.join(__dirname, "public")));
+
+app.use(express.static("public"));
 
 app.use( async(req, res, next) => {
   await User.findById("655a60adf536f70dc27508f6")
