@@ -19,6 +19,7 @@ app.set("views", "views");
 // app.set("views","views");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
+const authRoutes = require("./routes/auth");
 const err404Routes = require("./routes/err404");
 // const Cart = require("./model/cart");
 
@@ -30,9 +31,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 //! static olan css dosyaları için
 
-app.use(express.static("public"));
+app.use(express.static("public"));  
 
-app.use( async(req, res, next) => {
+app.use(async (req, res, next) => {
   await User.findById("655e19584de42ed015c18121")
     .then((user) => {
       req.user = user;
@@ -44,6 +45,7 @@ app.use( async(req, res, next) => {
 //! dosyalardan veri çekme
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 app.use(err404Routes);
 
 mongoose
@@ -71,4 +73,3 @@ mongoose
   .catch((err) => {
     console.log(err);
   });
-
