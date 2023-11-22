@@ -26,13 +26,14 @@ const hostName = "127.0.0.1";
 const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
 
 //! static olan css dosyaları için
 
 app.use(express.static("public"));
 
 app.use( async(req, res, next) => {
-  await User.findById("655a60adf536f70dc27508f6")
+  await User.findById("655e19584de42ed015c18121")
     .then((user) => {
       req.user = user;
       next();
@@ -47,22 +48,27 @@ app.use(err404Routes);
 
 mongoose
   .connect(process.env.DB_ACCESS)
-  .then((result) => {
-    User.findOne().then((user) => {
+  .then(async (result) => {
+    try {
+      const user = await User.findOne();
       if (!user) {
-        const user = new User({
+        const newUser = new User({
           name: "Serhat",
-          email: process.env.MAIL,
+          email: "selserhat01@gmail.com",
           cart: {
             items: [],
           },
         });
-        user.save();
+        await newUser.save();
       }
-    });
-    app.listen(3000);
-    console.log("Connected to MongoDB");
+
+      app.listen(3000);
+      console.log("Connected to MongoDB");
+    } catch (error) {
+      console.log(error);
+    }
   })
   .catch((err) => {
     console.log(err);
   });
+

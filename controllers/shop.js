@@ -4,6 +4,7 @@ const Order = require("../model/order");
 exports.getProducts = (req, res, next) => {
   Product.find()
     .then((products) => {
+      console.log(req.user);
       console.log(products);
       res.render("shop/product-list", {
         prods: products,
@@ -11,6 +12,7 @@ exports.getProducts = (req, res, next) => {
         path: "/products",
       });
     })
+
     .catch((err) => {
       console.log(err);
     });
@@ -83,8 +85,8 @@ exports.postOrder = async (req, res, next) => {
   try {
     const user = await req.user.populate("cart.items.productId");
 
-    const products = user.cart.items.map(async (i) => {
-      await { quantity: i.quantity, product: i.productId };
+    const products = user.cart.items.map((i) => {
+      return { quantity: i.quantity, product: {...i.productId._doc} };
     });
 
     const order = new Order({
@@ -106,12 +108,22 @@ exports.postOrder = async (req, res, next) => {
 exports.getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ "user.userId": req.user._id });
-
+    console.log("orders", orders);
+    console.log("products", orders.products);
     res.render("shop/orders", {
       path: "/orders",
       pageTitle: "Your Orders",
       orders: orders,
     });
+    if (orders.length > 0) {
+      orders.forEach((order) => {
+        const orderProducts = order.products.title;
+        console.log(orderProducts);
+        // Burada orderProducts'ı kullanabilir veya başka işlemler yapabilirsiniz.
+      });
+    } else {
+      console.log("No orders found.");
+    }
   } catch (error) {
     console.log(error);
   }

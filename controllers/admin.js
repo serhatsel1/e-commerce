@@ -67,9 +67,11 @@ exports.postEditProduct = async (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find().select("price").populate("userId")
+  Product.find()
+    .select("price")
+    .populate("userId")
     .then((products) => {
-      console.log(products)
+      console.log(products);
       res.render("admin/product", {
         prods: products,
         pageTitle: "Admin Products",
