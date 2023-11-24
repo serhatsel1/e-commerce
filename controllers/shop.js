@@ -106,7 +106,7 @@ exports.postOrder = async (req, res, next) => {
       products: products,
     });
 
-    const result = await order.save();
+    return await order.save();
     await req.user.clearCart();
     res.redirect("/orders");
   } catch (error) {
@@ -135,6 +135,6 @@ exports.getOrders = async (req, res, next) => {
       console.log("No orders found.");
     }
   } catch (error) {
-    console.log(error);
+    console.log("getOrders-->",error);
   }
 };

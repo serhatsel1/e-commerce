@@ -61,20 +61,20 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.use(function (req, res, next) {
-  if (req.session && req.session.userID) {
-    UserModel.findById(req.session.userId, function (err, user) {
-      if (!err && user) {
-        req.user = user;
-        next();
-      } else {
-        next(new Error("Could not restore User from Session."));
-      }
-    });
-  } else {
-    next();
-  }
-});
+// app.use(function (req, res, next) {
+//   if (req.session && req.session.userID) {
+//     UserModel.findById(req.session.userId, function (err, user) {
+//       if (!err && user) {
+//         req.user = user;
+//         next();
+//       } else {
+//         next(new Error("Could not restore User from Session."));
+//       }
+//     });
+//   } else {
+//     next();
+//   }
+// });
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
@@ -84,18 +84,6 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(async (result) => {
     try {
-      const user = await User.findOne();
-      if (!user) {
-        const newUser = new User({
-          name: "Serhat",
-          email: "selserhat01@gmail.com",
-          cart: {
-            items: [],
-          },
-        });
-        await newUser.save();
-      }
-
       app.listen(3000);
       console.log("Connected to MongoDB");
     } catch (error) {

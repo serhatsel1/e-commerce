@@ -2,13 +2,13 @@ const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
-  name: {
-    type: String,
-    required: true
-  },
   email: {
     type: String,
-    required: true
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
   },
   cart: {
     items: [
@@ -26,14 +26,16 @@ const userSchema = new Schema({
 
 userSchema.methods.addToCart = function (product) {
   // Kullanıcının sepetinde eklemek istediği ürünün index'ini bulma
-  const cartProduct = this.cart.items.find(
+  const cartProductIndex = this.cart.items.findIndex(
     (item) => item.productId.toString() === product._id.toString()
   );
 
   // Eğer ürün sepette varsa, miktarını bir artır, yoksa yeni bir ürünü sepete ekle
-  if (cartProduct) {
-    cartProduct.quantity += 1;
+  if (cartProductIndex !== -1) {
+    // Sepette varsa, miktarı artır
+    this.cart.items[cartProductIndex].quantity += 1;
   } else {
+    // Yoksa yeni bir ürünü sepete ekle
     this.cart.items.push({
       productId: product._id,
       quantity: 1,
@@ -43,14 +45,18 @@ userSchema.methods.addToCart = function (product) {
   // Kullanıcının sepetini kaydet
   return this.save();
 };
+
 userSchema.methods.removeCartItem = function (productId) {
   const updateCartItems = this.cart.items.filter((item) => {
     return item.productId.toString() !== productId.toString();
   });
+
   this.cart.items = updateCartItems;
 
+  // Kullanıcının sepetini kaydet
   return this.save();
 };
+
 
 userSchema.methods.clearCart = function () {
   this.cart = { items: [] };
