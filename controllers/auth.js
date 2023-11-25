@@ -19,18 +19,28 @@ exports.getSignup = (req, res, next) => {
     console.log("getSignup-->", error);
   }
 };
-exports.postLogin = (req, res, next) => {
-  User.findById("655e19584de42ed015c18121")
-    .then((user) => {
+exports.postLogin = async (req, res, next) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res.redirect("/login");
+    }
+    const doMatch = await bcrypt.compare(password, user.password);
+    if (doMatch) {
       req.session.isLoggedIn = true;
       req.session.user = user;
       // save gerek yok fakat işi garantilemek için kullanılabilir
-      req.session.save((err) => {
-        console.log("postLogin-->", err);
+      return req.session.save((err) => {
+        console.log("postLoginSave-->", err);
         res.redirect("/");
       });
-    })
-    .catch((err) => console.log(err));
+    }
+    res.redirect("/login");
+  } catch (error) {
+    console.log("postLogin-->", error);
+    return res.redirect("/login");
+  }
 };
 
 exports.postSignup = async (req, res, next) => {

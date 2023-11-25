@@ -48,16 +48,17 @@ app.use(
   })
 );
 app.use(async (req, res, next) => {
-  if (!req.session.user) {
-    return next();
-  } else {
-    await User.findById(req.session.user._id)
-      .then((user) => {
-        req.user = user;
-        next();
-      })
+  try {
+    if (!req.session.user) {
+      return next();
+    } else {
+      const user = await User.findById(req.session.user._id);
 
-      .catch((err) => console.log(err));
+      req.user = user;
+      next();
+    }
+  } catch (error) {
+    console.log("request user -->", error);
   }
 });
 
