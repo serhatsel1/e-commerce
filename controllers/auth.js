@@ -2,6 +2,7 @@ const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const { DATE } = require("sequelize");
 
 exports.getLogin = async (req, res, next) => {
   await res.render("auth/login", {
@@ -102,7 +103,7 @@ exports.postReset = async (req, res, next) => {
       return res.redirect("/reset");
     }
     user.resetToken = token;
-    user.resetTokenExpiration = Date.now() + 3600000;
+    user.resetTokenExpiration = Date.now() + 3600000; //1 saat geçerli
     await user.save();
 
     // htmlTemplate içinde ${token} doğru bir şekilde kullanılmıştır.
@@ -174,4 +175,43 @@ exports.postReset = async (req, res, next) => {
     // E-posta gönderildikten sonra ana sayfaya yönlendir
     res.redirect("/");
   });
+};
+
+exports.getNewPassword = async (req, res, next) => {
+  const token = req.params.token;
+  try {
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiration: { $gt: Date.now() },
+    });
+    console.log(user._id)
+    res.render("auth/new-password", {
+      pageTitle: "New password",
+      path: "/new-password",
+      errorMessage: req.flash("error"),
+      userId: user._id.toString(),
+      passwordToken: token,
+    });
+  } catch (error) {
+    console.log("getNewPassword-->", error);
+  }
+};
+exports.postNewPassword = async (req, res, next) => {
+  const newPassword = req.body.password;
+  const { passwordToken, userId } = req.body;
+
+  const user = await User.findOne({
+    resetToken: passwordToken,
+    resetTokenExpiration: { $gt: Date.now() },
+    _id: userId,
+  });
+
+  if (user) {
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    user.resetToken = undefined;
+    user.resetTokenExpiration = undefined;
+    await user.save();
+    res.redirect("/login")
+  }
 };

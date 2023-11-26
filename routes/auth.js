@@ -9,6 +9,8 @@ router
   .post("/signup", authControllers.postSignup)
   .post("/logout", authControllers.postLogout)
   .get("/reset", authControllers.getReset)
-  .post("/reset", authControllers.postReset);
+  .post("/reset", authControllers.postReset)
+  .get("/reset/:token", authControllers.getNewPassword)
+  .post("/new-password", authControllers.postNewPassword);
 
 module.exports = router;
