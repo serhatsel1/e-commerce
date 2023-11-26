@@ -6,7 +6,10 @@
 <body>
    <%- include('../includes/navigation.ejs') %>
 
-    <main>
+    <main> 
+        <% if(emailErrorMessage.length > 0){ %>
+        <div class="user-message user-message--error"><%= emailErrorMessage %> </div>
+        <% } %>
         <form class="login-form" action="/signup" method="POST">
             <div class="form-control">
                 <label for="email">E-Mail</label>

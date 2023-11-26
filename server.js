@@ -1,11 +1,13 @@
 const path = require("path");
 const dotenv = require("dotenv").config();
 
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const flash = require("connect-flash");
 
 const errorController = require("./controllers/error");
 const User = require("./model/user");
@@ -47,6 +49,7 @@ app.use(
     store: strore,
   })
 );
+app.use(flash());
 app.use(async (req, res, next) => {
   try {
     if (!req.session.user) {
@@ -62,20 +65,13 @@ app.use(async (req, res, next) => {
   }
 });
 
-// app.use(function (req, res, next) {
-//   if (req.session && req.session.userID) {
-//     UserModel.findById(req.session.userId, function (err, user) {
-//       if (!err && user) {
-//         req.user = user;
-//         next();
-//       } else {
-//         next(new Error("Could not restore User from Session."));
-//       }
-//     });
-//   } else {
-//     next();
-//   }
-// });
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  // console.log("res.locals.isAuthenticated-->", res.locals.isAuthenticated);
+  next();
+});
+
+
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);

@@ -10,6 +10,8 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
+  resetToken: String,
+  resetTokenExpiration: Date,
   cart: {
     items: [
       {
@@ -56,7 +58,6 @@ userSchema.methods.removeCartItem = function (productId) {
   // Kullanıcının sepetini kaydet
   return this.save();
 };
-
 
 userSchema.methods.clearCart = function () {
   this.cart = { items: [] };

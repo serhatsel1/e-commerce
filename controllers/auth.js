@@ -1,19 +1,23 @@
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
-exports.getLogin = (req, res, next) => {
-  console.log(req.session.isLoggedIn);
-  res.render("auth/login", {
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
+
+exports.getLogin = async (req, res, next) => {
+  await res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
-    isAuthenticated: false,
+    errorMessage: req.flash("error"),
+    passwordErrorMessage: req.flash("passwordError"),
   });
 };
+
 exports.getSignup = (req, res, next) => {
   try {
     res.render("auth/signup", {
       path: "/signup",
       pageTitle: "Signup",
-      isAuthenticated: false,
+      emailErrorMessage: req.flash("error"),
     });
   } catch (error) {
     console.log("getSignup-->", error);
@@ -24,6 +28,7 @@ exports.postLogin = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: email });
     if (!user) {
+      req.flash("error", "Invalid email or password");
       return res.redirect("/login");
     }
     const doMatch = await bcrypt.compare(password, user.password);
@@ -35,11 +40,13 @@ exports.postLogin = async (req, res, next) => {
         console.log("postLoginSave-->", err);
         res.redirect("/");
       });
+    } else {
+      req.flash("passwordError", "Hatalı şifre");
     }
     res.redirect("/login");
   } catch (error) {
     console.log("postLogin-->", error);
-    return res.redirect("/login");
+    res.redirect("/login");
   }
 };
 
@@ -50,6 +57,7 @@ exports.postSignup = async (req, res, next) => {
 
     if (userEmail.length > 0) {
       console.log("User email exists -->", userEmail);
+      req.flash("error", "E-mail is already , please pick a different one ");
       return res.redirect("/signup?error=emailExists");
     }
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -70,6 +78,100 @@ exports.postSignup = async (req, res, next) => {
 exports.postLogout = (req, res, next) => {
   req.session.destroy((err) => {
     console.log("postLogout-->", err);
+    res.redirect("/");
+  });
+};
+
+exports.getReset = (req, res, next) => {
+  res.render("auth/reset", {
+    pageTitle: "Password Reset",
+    path: "/reset",
+    errorMessage: req.flash("error"),
+  });
+};
+exports.postReset = async (req, res, next) => {
+  crypto.randomBytes(32, async (err, buf) => {
+    if (err) {
+      console.log("postReset-->", err);
+      return res.redirect("/reset");
+    }
+    const token = buf.toString("hex");
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) {
+      req.flash("error", "No account with that email found.");
+      return res.redirect("/reset");
+    }
+    user.resetToken = token;
+    user.resetTokenExpiration = Date.now() + 3600000;
+    await user.save();
+
+    // htmlTemplate içinde ${token} doğru bir şekilde kullanılmıştır.
+    const htmlTemplate = `
+      <!doctype html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>Simple Transactional Email</title>
+        <style>
+          /* Stil ve CSS ayarları buraya gelebilir */
+        </style>
+      </head>
+      <body>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body">
+          <tr>
+            <td>&nbsp;</td>
+            <td class="container">
+              <div class="content">
+                <!-- START CENTERED WHITE CONTAINER -->
+                <table role="presentation" class="main">
+                  <!-- START MAIN CONTENT AREA -->
+                  <tr>
+                    <td class="wrapper">
+                      <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td>
+                            <p>Name: ${req.body.email}</p>
+                            <p>Message: Parolayı sıfırlama talebinde bulundunuz</p>
+                            <p>Message: yeni parolayı belirlemek için bu <a href="http://localhost:3000/reset/${token}">linke</a> tıklayınız </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <!-- END MAIN CONTENT AREA -->
+                </table>
+                <!-- END CENTERED WHITE CONTAINER -->
+              </div>
+            </td>
+            <td>&nbsp;</td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.NODE_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        to: process.env.EMAIL,
+        subject: `Password Reset`,
+        html: htmlTemplate,
+      });
+    } catch (error) {
+      console.log("E-posta gönderme hatası:", error);
+    }
+
+    // E-posta gönderildikten sonra ana sayfaya yönlendir
     res.redirect("/");
   });
 };
