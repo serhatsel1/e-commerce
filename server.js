@@ -67,7 +67,7 @@ app.use(async (req, res, next) => {
 
 app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.isLoggedIn;
-  // console.log("res.locals.isAuthenticated-->", res.locals.isAuthenticated);
+  console.log("res.locals.isAuthenticated-->", res.locals.isAuthenticated);
   next();
 });
 

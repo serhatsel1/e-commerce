@@ -1,3 +1,4 @@
+const { error } = require("console");
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -19,6 +20,11 @@ exports.getSignup = (req, res, next) => {
       path: "/signup",
       pageTitle: "Signup",
       emailErrorMessage: req.flash("error"),
+      oldInput: {
+        email: "",
+        password: "",
+        confirmPassword: "",
+      },
     });
   } catch (error) {
     console.log("getSignup-->", error);
@@ -32,9 +38,11 @@ exports.postLogin = async (req, res, next) => {
       req.flash("error", "Invalid email or password");
       return res.redirect("/login");
     }
+
     const doMatch = await bcrypt.compare(password, user.password);
     if (doMatch) {
       req.session.isLoggedIn = true;
+      console.log("req.session.isLoggedIn", req.session.isLoggedIn);
       req.session.user = user;
       // save gerek yok fakat işi garantilemek için kullanılabilir
       return req.session.save((err) => {
@@ -53,26 +61,88 @@ exports.postLogin = async (req, res, next) => {
 
 exports.postSignup = async (req, res, next) => {
   try {
-    const { email, password, confirmpassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
     const userEmail = await User.find({ email: email });
-
+    const render = () => {};
     if (userEmail.length > 0) {
       console.log("User email exists -->", userEmail);
       req.flash("error", "E-mail is already , please pick a different one ");
-      return res.redirect("/signup?error=emailExists");
+      return res.render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        emailErrorMessage: req.flash("error"),
+        oldInput: {
+          email: email,
+          // password: password,
+          // confirmPassword: confirmPassword,
+        },
+      });
     }
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const user = new User({
-      email: email,
-      password: hashedPassword,
-      cart: { items: [] },
-    });
-
-    await user.save();
-    return res.redirect("/login");
+    if (password === confirmPassword) {
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const user = new User({
+        email: email,
+        password: hashedPassword,
+        cart: { items: [] },
+      });
+      await user.save();
+      return res.render("/login");
+    } else {
+      req.flash("error", "If the passwords don't match");
+      return res.render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        emailErrorMessage: req.flash("error"),
+        oldInput: {
+          email: email,
+          // password: password,
+          // confirmPassword: confirmPassword,
+        },
+      });
+    }
   } catch (error) {
     console.log("Post Signup error -->", error);
-    res.redirect("/signup?error=unknown");
+
+    if (error.name === "ValidationError" && error.errors.email) {
+      // Eğer hata bir ValidatorError ve email hatası varsa
+      req.flash("error", error.errors.email.message);
+      return res.render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        emailErrorMessage: req.flash("error"),
+        oldInput: {
+          email: email,
+          // password: password,
+          // confirmPassword: confirmPassword,
+        },
+      });
+    }
+    if (error.name === "ValidationError" && error.errors.password) {
+      req.flash("error", error.errors.password.message);
+      return res.render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        emailErrorMessage: req.flash("error"),
+        oldInput: {
+          email: email,
+          // password: password,
+          // confirmPassword: confirmPassword,
+        },
+      });
+    }
+
+    // Diğer hatalar için genel bir hata mesajı kullanıcıya gönderilebilir
+    req.flash("error", "An error occurred. Please try again later.");
+    return res.render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      emailErrorMessage: req.flash("error"),
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword,
+      },
+    });
   }
 };
 
@@ -184,7 +254,7 @@ exports.getNewPassword = async (req, res, next) => {
       resetToken: token,
       resetTokenExpiration: { $gt: Date.now() },
     });
-    console.log(user._id)
+    console.log(user._id);
     res.render("auth/new-password", {
       pageTitle: "New password",
       path: "/new-password",
@@ -212,6 +282,6 @@ exports.postNewPassword = async (req, res, next) => {
     user.resetToken = undefined;
     user.resetTokenExpiration = undefined;
     await user.save();
-    res.redirect("/login")
+    res.redirect("/login");
   }
 };

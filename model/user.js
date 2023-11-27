@@ -1,15 +1,19 @@
 const mongoose = require("mongoose");
-
+const validator = require("validator");
 const Schema = mongoose.Schema;
 const userSchema = new Schema({
   email: {
     type: String,
     required: true,
+    validate: [validator.isEmail, "Valid email is required!"],
   },
   password: {
     type: String,
     required: true,
+    minlength: [4, "Password must be at least 'four' characters"],
+    // maxlength: [15, "Password can be at most 'fifteen' characters"],
   },
+
   resetToken: String,
   resetTokenExpiration: Date,
   cart: {
