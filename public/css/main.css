@@ -260,3 +260,8 @@ form {
     width: 30rem;
   }
 }
+
+
+.form-control input.invalid {
+  border-color: red;
+}

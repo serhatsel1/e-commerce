@@ -5,13 +5,18 @@ const userSchema = new Schema({
   email: {
     type: String,
     required: true,
-    validate: [validator.isEmail, "Valid email is required!"],
+    validate: {
+      validator: (value) => validator.isEmail(validator.normalizeEmail(value)),
+      message: "Valid email is required!",
+    },
+    trim: true,
   },
   password: {
     type: String,
     required: true,
     minlength: [4, "Password must be at least 'four' characters"],
     // maxlength: [15, "Password can be at most 'fifteen' characters"],
+    trim: true,
   },
 
   resetToken: String,
@@ -29,6 +34,7 @@ const userSchema = new Schema({
     ],
   },
 });
+
 
 userSchema.methods.addToCart = function (product) {
   // Kullanıcının sepetinde eklemek istediği ürünün index'ini bulma

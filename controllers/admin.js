@@ -5,30 +5,83 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
+    //! oldinput product
+    product: {
+      title: "",
+      price: "",
+      description: "",
+      imageUrl: "",
+    },
+    editError: req.flash("error"),
+    errorStyle: "",
   });
 };
 
-exports.postAddProduct = (req, res, next) => {
+exports.postAddProduct = async (req, res, next) => {
   const { title, imageUrl, price, description } = req.body;
-  const product = new Product({
-    title: title,
-    price: price,
-    description: description,
-    imageUrl: imageUrl,
-    userId: req.user,
-  });
-  product
-    .save()
-    .then((result) => {
-      // console.log(result);
-      console.log("Created Product");
-      res.redirect("/admin/products");
-    })
-    .catch((err) => {
-      console.log(err);
+  try {
+    const product = new Product({
+      title: title,
+      price: price,
+      description: description,
+      imageUrl: imageUrl,
+      userId: req.user,
     });
+    await product.save();
+    // console.log(result);
+    console.log("Created Product");
+    res.redirect("/admin/product");
+  } catch (error) {
+    if (error.name === "ValidationError" && error.errors.title) {
+      req.flash("error", error.errors.title.message);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: title,
+          price: price,
+          description: description,
+          imageUrl: imageUrl,
+        },
+        editError: req.flash("error"),
+        errorStyle: "title",
+      });
+    }
+    if (error.name === "ValidationError" && error.errors.price) {
+      req.flash("error", error.errors.price.message);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: title,
+          price: price,
+          description: description,
+          imageUrl: imageUrl,
+        },
+        editError: req.flash("error"),
+        errorStyle: "price",
+      });
+    }
+    if (error.name === "ValidationError" && error.errors.description) {
+      req.flash("error", error.errors.description.message);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: title,
+          price: price,
+          description: description,
+          imageUrl: imageUrl,
+        },
+        editError: req.flash("error"),
+        errorStyle: "description",
+      });
+    }
+  }
 };
-
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
   if (!editMode) {
@@ -46,32 +99,98 @@ exports.getEditProduct = (req, res, next) => {
         path: "/admin/edit-product",
         editing: editMode,
         product: product,
+        editError: [],
+        errorStyle: "",
       });
     })
     .catch((err) => console.log(err));
 };
 
 exports.postEditProduct = async (req, res, next) => {
+  const productId = req.body.productId;
+  const updatedTitle = req.body.title;
+  const updatedPrice = req.body.price;
+  const updatedImageUrl = req.body.imageUrl;
+  const updatedDesc = req.body.description;
+
   try {
-    const { productId, title, price, imageUrl, description } = req.body;
-  
     const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.redirect("/");
+    }
 
     if (product.userId.toString() !== req.user._id.toString()) {
       return res.redirect("/");
-    }else{
-      await Product.findByIdAndUpdate(
-        { _id: productId },
-        { title, price, imageUrl, description }
-      );
-      await product.save();
-      console.log("UPDATED PRODUCT!");
-      res.redirect("/admin/products");
-
     }
 
+    // Eski ürünü sil
+    await Product.findByIdAndDelete(productId);
+
+    // Yeni ürünü güncelle
+    const updatedProduct = new Product({
+      _id: productId,
+      title: updatedTitle,
+      price: updatedPrice,
+      description: updatedDesc,
+      imageUrl: updatedImageUrl,
+      userId: req.user._id,
+    });
+
+    // Veritabanında güncelleme
+    await updatedProduct.save();
+
+    console.log("UPDATED PRODUCT!");
+    res.redirect("/admin/product");
   } catch (error) {
-    console.log("postEditProductError -->", error);
+    if (error.name === "ValidationError" && error.errors.title) {
+      req.flash("error", error.errors.title.message);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: updatedTitle,
+          price: updatedPrice,
+          description: updatedDesc,
+          imageUrl: updatedImageUrl,
+        },
+        editError: req.flash("error"),
+        errorStyle: "title",
+      });
+    }
+    if (error.name === "ValidationError" && error.errors.price) {
+      req.flash("error", error.errors.price.message);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: title,
+          price: price,
+          description: description,
+          imageUrl: imageUrl,
+        },
+        editError: req.flash("error"),
+        errorStyle: "price",
+      });
+    }
+    if (error.name === "ValidationError" && error.errors.description) {
+      req.flash("error", error.errors.description.message);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: title,
+          price: price,
+          description: description,
+          imageUrl: imageUrl,
+        },
+        editError: req.flash("error"),
+        errorStyle: "description",
+      });
+    }
   }
 };
 

@@ -25,6 +25,7 @@ exports.getSignup = (req, res, next) => {
         password: "",
         confirmPassword: "",
       },
+      errorStyle: "",
     });
   } catch (error) {
     console.log("getSignup-->", error);
@@ -63,48 +64,55 @@ exports.postSignup = async (req, res, next) => {
   try {
     const { email, password, confirmPassword } = req.body;
     const userEmail = await User.find({ email: email });
-    const render = () => {};
+
     if (userEmail.length > 0) {
-      console.log("User email exists -->", userEmail);
-      req.flash("error", "E-mail is already , please pick a different one ");
+      req.flash(
+        "error",
+        "E-mail is already taken, please pick a different one"
+      );
       return res.render("auth/signup", {
         path: "/signup",
         pageTitle: "Signup",
         emailErrorMessage: req.flash("error"),
         oldInput: {
           email: email,
-          // password: password,
-          // confirmPassword: confirmPassword,
         },
+        errorStyle: "emailError",
       });
     }
-    if (password === confirmPassword) {
-      const hashedPassword = await bcrypt.hash(password, 12);
-      const user = new User({
-        email: email,
-        password: hashedPassword,
-        cart: { items: [] },
-      });
-      await user.save();
-      return res.render("/login");
-    } else {
-      req.flash("error", "If the passwords don't match");
+
+    if (
+      password.toString() !== confirmPassword.toString() ||
+      password.length < 4
+    ) {
+      req.flash("error", "Invalid password");
       return res.render("auth/signup", {
         path: "/signup",
         pageTitle: "Signup",
         emailErrorMessage: req.flash("error"),
         oldInput: {
           email: email,
-          // password: password,
-          // confirmPassword: confirmPassword,
         },
+        errorStyle: "passwordError",
       });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = new User({
+      email: email,
+      password: hashedPassword,
+      cart: { items: [] },
+    });
+
+    await user.save();
+    return res.redirect("/login");
   } catch (error) {
+    const email = req.body.email;
     console.log("Post Signup error -->", error);
 
     if (error.name === "ValidationError" && error.errors.email) {
       // Eğer hata bir ValidatorError ve email hatası varsa
+      // const emailErrorText = error.errors.email.message;
       req.flash("error", error.errors.email.message);
       return res.render("auth/signup", {
         path: "/signup",
@@ -112,9 +120,8 @@ exports.postSignup = async (req, res, next) => {
         emailErrorMessage: req.flash("error"),
         oldInput: {
           email: email,
-          // password: password,
-          // confirmPassword: confirmPassword,
         },
+        errorStyle: "emailError",
       });
     }
     if (error.name === "ValidationError" && error.errors.password) {
@@ -124,10 +131,9 @@ exports.postSignup = async (req, res, next) => {
         pageTitle: "Signup",
         emailErrorMessage: req.flash("error"),
         oldInput: {
-          email: email,
-          // password: password,
-          // confirmPassword: confirmPassword,
+          email: "passwordError",
         },
+        errorStyle: "inputError",
       });
     }
 
@@ -139,8 +145,6 @@ exports.postSignup = async (req, res, next) => {
       emailErrorMessage: req.flash("error"),
       oldInput: {
         email: email,
-        password: password,
-        confirmPassword: confirmPassword,
       },
     });
   }
