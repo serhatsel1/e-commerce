@@ -18,13 +18,14 @@ exports.getAddProduct = (req, res, next) => {
 };
 
 exports.postAddProduct = async (req, res, next) => {
-  const { title, imageUrl, price, description } = req.body;
+  const { title, price, description } = req.body;
+  const image = req.file;
   try {
     const product = new Product({
       title: title,
       price: price,
       description: description,
-      imageUrl: imageUrl,
+      imageUrl: image,
       userId: req.user,
     });
     await product.save();
@@ -32,6 +33,7 @@ exports.postAddProduct = async (req, res, next) => {
     console.log("Created Product");
     res.redirect("/admin/product");
   } catch (error) {
+    console.log(error);
     if (error.name === "ValidationError" && error.errors.title) {
       req.flash("error", error.errors.title.message);
       return res.render("admin/edit-product", {
@@ -79,6 +81,10 @@ exports.postAddProduct = async (req, res, next) => {
         editError: req.flash("error"),
         errorStyle: "description",
       });
+    }
+    else{
+      error = httpStatusCode = 500
+      next(error)
     }
   }
 };

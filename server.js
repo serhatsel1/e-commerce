@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const flash = require("connect-flash");
+const multer = require("multer");
 
 const errorController = require("./controllers/errorPage");
 const User = require("./model/user");
@@ -35,6 +36,8 @@ const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(express.urlencoded({ extended: true }));
+// dest saklanacağı dosya single static deki name 
+app.use(multer({dest:"image"}).single("image"));
 
 //! static olan css dosyaları için
 
@@ -55,7 +58,7 @@ app.use(async (req, res, next) => {
       return next();
     } else {
       const user = await User.findById(req.session.user._id);
-      //?  asenkronda error alsan dahi  try cath metodunda fırlatılan erroru tutar 
+      //?  asenkronda error alsan dahi  try cath metodunda fırlatılan erroru tutar
       // throw new Error("Dummy !!"); test fırlaıtlan error
       if (!user) {
         return next();
