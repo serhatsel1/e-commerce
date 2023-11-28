@@ -11,12 +11,14 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: "All Products",
         path: "/products",
-        
       });
     })
 
     .catch((err) => {
+      const error = new Error();
+      error.httpStatusCode = 500;
       console.log(err);
+      return next(error);
     });
 };
 
@@ -28,10 +30,14 @@ exports.getProduct = (req, res, next) => {
         product: product,
         pageTitle: product.title,
         path: "/products",
-        
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      const error = new Error();
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.getIndex = (req, res, next) => {
@@ -41,11 +47,13 @@ exports.getIndex = (req, res, next) => {
         prods: products,
         pageTitle: "Shop",
         path: "/",
-        
       });
     })
     .catch((err) => {
       console.log(err);
+      const error = new Error();
+      error.httpStatusCode = 500;
+      return next(error);
     });
 };
 exports.getCart = async (req, res, next) => {
@@ -62,10 +70,14 @@ exports.getCart = async (req, res, next) => {
         path: "/cart",
         pageTitle: "Your Cart",
         products: products,
-        
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      const error = new Error();
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.postCart = (req, res, next) => {
@@ -87,7 +99,12 @@ exports.postCartDelete = (req, res, next) => {
     .then((result) => {
       res.redirect("/cart");
     })
-    .catch((err) => console.log(err));
+     .catch((err) => {
+      console.log(err);
+      const error = new Error();
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.postOrder = async (req, res, next) => {
@@ -111,6 +128,8 @@ exports.postOrder = async (req, res, next) => {
     res.redirect("/orders");
   } catch (error) {
     console.log(error);
+    error.htttStatusCode = 500;
+    return next(error);
   }
 };
 
@@ -123,7 +142,6 @@ exports.getOrders = async (req, res, next) => {
       path: "/orders",
       pageTitle: "Your Orders",
       orders: orders,
-      
     });
     if (orders.length > 0) {
       orders.forEach((order) => {
@@ -135,6 +153,8 @@ exports.getOrders = async (req, res, next) => {
       console.log("No orders found.");
     }
   } catch (error) {
-    console.log("getOrders-->",error);
+    console.log("getOrders-->", error);
+    error.htttStatusCode = 500;
+    return next(error);
   }
 };

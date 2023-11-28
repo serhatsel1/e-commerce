@@ -103,7 +103,12 @@ exports.getEditProduct = (req, res, next) => {
         errorStyle: "",
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      console.log(err);
+      const error = new Error();
+      error.httpStatusCode = 500;
+      return next(error);
+    });
 };
 
 exports.postEditProduct = async (req, res, next) => {
@@ -205,6 +210,8 @@ exports.getProducts = async (req, res, next) => {
     });
   } catch (error) {
     console.log("getProducts-->", error);
+    error.httpStatusCode = 500;
+    return next(error);
   }
 };
 
@@ -216,6 +223,8 @@ exports.postDeleteProduct = async (req, res, next) => {
     console.log("DESTROYED PRODUCT");
     res.redirect("/admin/products");
   } catch (error) {
-    console.log("postDeleteProductError -->", error);
+    console.log("postDe leteProductError -->", error);
+    error.httpStatusCode = 500;
+    return next(error);
   }
 };
