@@ -20,11 +20,10 @@ exports.getAddProduct = (req, res, next) => {
 exports.postAddProduct = async (req, res, next) => {
   const { title, price, description } = req.body;
   const image = req.file;
+  // const imageUrl = image.path;
   try {
-    console.log(image);
     if (!image) {
-      req.flash("error", "Attached file is not an image! "),
-        console.log("iamge-----@@@@!!!", image);
+      req.flash("error", "Attached file is not an image!");
       return res.render("admin/edit-product", {
         pageTitle: "Add Product",
         path: "/admin/add-product",
@@ -38,6 +37,7 @@ exports.postAddProduct = async (req, res, next) => {
         errorStyle: "price",
       });
     }
+
     const imageUrl = image.path;
     const product = new Product({
       title: title,
@@ -46,15 +46,16 @@ exports.postAddProduct = async (req, res, next) => {
       imageUrl: imageUrl,
       userId: req.user,
     });
+
     await product.save();
-    // console.log(result);
     console.log("Created Product");
     res.redirect("/admin/product");
   } catch (error) {
-    const imageUrl = image.path;
     console.log(error);
-    if (error.name === "ValidationError" && error.errors.title) {
-      req.flash("error", error.errors.title.message);
+
+    if (error.name === "ValidationError") {
+      req.flash("error", error.message);
+
       return res.render("admin/edit-product", {
         pageTitle: "Add Product",
         path: "/admin/add-product",
@@ -63,49 +64,18 @@ exports.postAddProduct = async (req, res, next) => {
           title: title,
           price: price,
           description: description,
-          imageUrl: imageUrl,
+          imageUrl: image ? image.path : null,
         },
         editError: req.flash("error"),
-        errorStyle: "title",
-      });
-    }
-    if (error.name === "ValidationError" && error.errors.price) {
-      req.flash("error", error.errors.price.message);
-      return res.render("admin/edit-product", {
-        pageTitle: "Add Product",
-        path: "/admin/add-product",
-        editing: false,
-        product: {
-          title: title,
-          price: price,
-          description: description,
-          imageUrl: imageUrl,
-        },
-        editError: req.flash("error"),
-        errorStyle: "price",
-      });
-    }
-    if (error.name === "ValidationError" && error.errors.description) {
-      req.flash("error", error.errors.description.message);
-      return res.render("admin/edit-product", {
-        pageTitle: "Add Product",
-        path: "/admin/add-product",
-        editing: false,
-        product: {
-          title: title,
-          price: price,
-          description: description,
-          imageUrl: imageUrl,
-        },
-        editError: req.flash("error"),
-        errorStyle: "description",
+        errorStyle: error.errors ? Object.keys(error.errors)[0] : null,
       });
     } else {
-      error = httpStatusCode = 500;
+      error.httpStatusCode = 500;
       next(error);
     }
   }
 };
+
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
   if (!editMode) {
@@ -155,7 +125,7 @@ exports.postEditProduct = async (req, res, next) => {
 
     // Eski ürünü sil
     await Product.findByIdAndDelete(productId);
-    
+
     // Yeni ürünü güncelle
     const updatedProduct = new Product({
       _id: productId,

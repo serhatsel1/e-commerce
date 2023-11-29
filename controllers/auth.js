@@ -43,7 +43,7 @@ exports.postLogin = async (req, res, next) => {
     const doMatch = await bcrypt.compare(password, user.password);
     if (doMatch) {
       req.session.isLoggedIn = true;
-      console.log("req.session.isLoggedIn", req.session.isLoggedIn);
+      // console.log("req.session.isLoggedIn", req.session.isLoggedIn);
       req.session.user = user;
       // save gerek yok fakat işi garantilemek için kullanılabilir
       return req.session.save((err) => {
@@ -258,7 +258,7 @@ exports.getNewPassword = async (req, res, next) => {
       resetToken: token,
       resetTokenExpiration: { $gt: Date.now() },
     });
-    console.log(user._id);
+    // console.log(user._id);
     res.render("auth/new-password", {
       pageTitle: "New password",
       path: "/new-password",

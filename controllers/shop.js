@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 const Product = require("../model/product");
 const Order = require("../model/order");
 const User = require("../model/user");
@@ -5,8 +8,6 @@ const User = require("../model/user");
 exports.getProducts = (req, res, next) => {
   Product.find()
     .then((products) => {
-      console.log(req.user);
-      console.log(products);
       res.render("shop/product-list", {
         prods: products,
         pageTitle: "All Products",
@@ -57,27 +58,25 @@ exports.getIndex = (req, res, next) => {
     });
 };
 exports.getCart = async (req, res, next) => {
-  const user = await User.findById(req.user._id).populate(
-    "cart.items.productId"
-  );
-  req.user = user; // Oturumu güncelle
-  user
-    .populate("cart.items.productId")
-    .then((user) => {
-      console.log(user.cart.items);
-      const products = user.cart.items;
-      res.render("shop/cart", {
-        path: "/cart",
-        pageTitle: "Your Cart",
-        products: products,
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      const error = new Error();
-      error.httpStatusCode = 500;
-      return next(error);
+  try {
+    const user = await User.findById(req.user._id).populate(
+      "cart.items.productId"
+    );
+
+    console.log("getCart", user.cart.items);
+    const products = user.cart.items;
+
+    res.render("shop/cart", {
+      path: "/cart",
+      pageTitle: "Your Cart",
+      products: products,
     });
+  } catch (error) {
+    console.error(error);
+    const err = new Error("Internal Server Error");
+    err.httpStatusCode = 500;
+    return next(err);
+  }
 };
 
 exports.postCart = (req, res, next) => {
@@ -87,7 +86,7 @@ exports.postCart = (req, res, next) => {
       return req.user.addToCart(product);
     })
     .then((result) => {
-      console.log(result);
+      // console.log(result);
       res.redirect("/cart");
     });
 };
@@ -99,7 +98,7 @@ exports.postCartDelete = (req, res, next) => {
     .then((result) => {
       res.redirect("/cart");
     })
-     .catch((err) => {
+    .catch((err) => {
       console.log(err);
       const error = new Error();
       error.httpStatusCode = 500;
@@ -123,12 +122,13 @@ exports.postOrder = async (req, res, next) => {
       products: products,
     });
 
-    return await order.save();
+    await order.save();
     await req.user.clearCart();
+
     res.redirect("/orders");
   } catch (error) {
     console.log(error);
-    error.htttStatusCode = 500;
+    error.httpStatusCode = 500;
     return next(error);
   }
 };
@@ -137,24 +137,58 @@ exports.getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ "user.userId": req.user._id });
     console.log("orders", orders);
-    console.log("products", orders.products);
+
     res.render("shop/orders", {
       path: "/orders",
       pageTitle: "Your Orders",
       orders: orders,
     });
-    if (orders.length > 0) {
-      orders.forEach((order) => {
-        const orderProducts = order.products.title;
-        console.log(orderProducts);
-        // Burada orderProducts'ı kullanabilir veya başka işlemler yapabilirsiniz.
-      });
-    } else {
-      console.log("No orders found.");
-    }
+
+    // if (orders.length > 0) {
+    //   orders.forEach((order) => {
+    //     const orderProducts = order.products.map((product) => product.title);
+    //     console.log("Order Products:", orderProducts);
+    //     // Burada orderProducts'ı kullanabilir veya başka işlemler yapabilirsiniz.
+    //   });
+    // }
   } catch (error) {
     console.log("getOrders-->", error);
-    error.htttStatusCode = 500;
-    return next(error);
+    // error.httpStatusCode = 500;
+    // return next(error);
+  }
+};
+
+exports.getInvoice = async (req, res, next) => {
+  const orderId = req.params.orderId;
+  const order = await Order.findById(orderId);
+  console.log("orderId --->", orderId);
+  try {
+    if (!order) {
+      const error = new Error("No order found");
+      console.log(error);
+      return next(error);
+    }
+    if (order.user.userId.toString() !== req.user._id.toString()) {
+      const error = new Error("Unauthorized");
+      console.log(error);
+      return next(error);
+    }
+    const invoiceName = "invoice-" + orderId + ".pdf";
+    const invoicePath = path.join("data", "invoices", invoiceName);
+    fs.readFile(invoicePath, (err, data) => {
+      if (err) {
+        console.log("getInvoice-->", err);
+        return next(err);
+      }
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        /*attachment*/ 'inline; filename="' + invoiceName + '"'
+      );
+      res.send(data);
+    });
+  } catch (error) {
+    console.log("getInvoice-->", error);
+    next(error);
   }
 };

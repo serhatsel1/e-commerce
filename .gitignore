@@ -134,5 +134,8 @@ dist
 
 /password
 
-
+# image
 /image
+
+# .pdf
+*.pdf
