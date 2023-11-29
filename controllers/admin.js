@@ -21,11 +21,29 @@ exports.postAddProduct = async (req, res, next) => {
   const { title, price, description } = req.body;
   const image = req.file;
   try {
+    console.log(image);
+    if (!image) {
+      req.flash("error", "Attached file is not an image! "),
+        console.log("iamge-----@@@@!!!", image);
+      return res.render("admin/edit-product", {
+        pageTitle: "Add Product",
+        path: "/admin/add-product",
+        editing: false,
+        product: {
+          title: title,
+          price: price,
+          description: description,
+        },
+        editError: req.flash("error"),
+        errorStyle: "price",
+      });
+    }
+    const imageUrl = image.path;
     const product = new Product({
       title: title,
       price: price,
       description: description,
-      imageUrl: image,
+      imageUrl: imageUrl,
       userId: req.user,
     });
     await product.save();
@@ -33,6 +51,7 @@ exports.postAddProduct = async (req, res, next) => {
     console.log("Created Product");
     res.redirect("/admin/product");
   } catch (error) {
+    const imageUrl = image.path;
     console.log(error);
     if (error.name === "ValidationError" && error.errors.title) {
       req.flash("error", error.errors.title.message);
@@ -81,10 +100,9 @@ exports.postAddProduct = async (req, res, next) => {
         editError: req.flash("error"),
         errorStyle: "description",
       });
-    }
-    else{
-      error = httpStatusCode = 500
-      next(error)
+    } else {
+      error = httpStatusCode = 500;
+      next(error);
     }
   }
 };
@@ -121,7 +139,7 @@ exports.postEditProduct = async (req, res, next) => {
   const productId = req.body.productId;
   const updatedTitle = req.body.title;
   const updatedPrice = req.body.price;
-  const updatedImageUrl = req.body.imageUrl;
+  const image = req.file;
   const updatedDesc = req.body.description;
 
   try {
@@ -137,14 +155,15 @@ exports.postEditProduct = async (req, res, next) => {
 
     // Eski ürünü sil
     await Product.findByIdAndDelete(productId);
-
+    
     // Yeni ürünü güncelle
     const updatedProduct = new Product({
       _id: productId,
       title: updatedTitle,
       price: updatedPrice,
       description: updatedDesc,
-      imageUrl: updatedImageUrl,
+      imageUrl: image ? image.path : product.imageUrl,
+      // imageUrl: updatedImageUrl,
       userId: req.user._id,
     });
 
@@ -164,7 +183,7 @@ exports.postEditProduct = async (req, res, next) => {
           title: updatedTitle,
           price: updatedPrice,
           description: updatedDesc,
-          imageUrl: updatedImageUrl,
+          // imageUrl: updatedImageUrl,
         },
         editError: req.flash("error"),
         errorStyle: "title",

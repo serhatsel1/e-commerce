@@ -18,8 +18,27 @@ const strore = new MongoDBStore({
   collection: "sessions",
 });
 
-//! ejs
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "image");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
 
+//! ejs
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
 app.set("view engine", "ejs");
 app.set("views", "views");
 //! pug js için
@@ -36,12 +55,15 @@ const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(express.urlencoded({ extended: true }));
-// dest saklanacağı dosya single static deki name 
-app.use(multer({dest:"image"}).single("image"));
+// dest saklanacağı dosya single static deki name
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+);
 
 //! static olan css dosyaları için
 
 app.use(express.static("public"));
+app.use("/image",express.static("image"));
 
 app.use(
   session({
@@ -88,7 +110,7 @@ app.use((error, req, res, next) => {
   res.status(500).render("err500", {
     pageTitle: "500Found",
     path: "",
-    isAuthenticated: req.isLoggedIn,
+    isAuthenticated: req.session.isLoggedIn,
   });
 });
 
