@@ -1,20 +1,39 @@
 const fs = require("fs");
 const path = require("path");
+const PDFDocument = require("pdfkit");
 
 const Product = require("../model/product");
 const Order = require("../model/order");
 const User = require("../model/user");
+const product = require("../model/product");
+
+const ITEMS_PER_PAGE = 2;
 
 exports.getProducts = (req, res, next) => {
+  const page = +req.query.page || 1;
+  let totalItems;
+
   Product.find()
+    .countDocuments()
+    .then((numOfProduct) => {
+      totalItems = numOfProduct;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
+    })
     .then((products) => {
       res.render("shop/product-list", {
         prods: products,
-        pageTitle: "All Products",
+        pageTitle: "Shop",
         path: "/products",
+        currentPage: page,
+        hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+        haspreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
       });
     })
-
     .catch((err) => {
       const error = new Error();
       error.httpStatusCode = 500;
@@ -41,13 +60,28 @@ exports.getProduct = (req, res, next) => {
     });
 };
 
-exports.getIndex = (req, res, next) => {
+exports.getIndex = async (req, res, next) => {
+  const page = +req.query.page || 1;
+  let totalItems;
   Product.find()
+    .countDocuments()
+    .then((numOfProduct) => {
+      totalItems = numOfProduct;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE) // 1 * 2 = 2 ürünü atla diğer satıra 2 ürün atlanarak başla
+        .limit(ITEMS_PER_PAGE); // her sayfayı 2 ürünle sınırla
+    })
     .then((products) => {
       res.render("shop/index", {
         prods: products,
         pageTitle: "Shop",
         path: "/",
+        currentPage: page,
+        hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+        haspreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
       });
     })
     .catch((err) => {
@@ -137,7 +171,8 @@ exports.getOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({ "user.userId": req.user._id });
     console.log("orders", orders);
-
+    // atCreat = orders.createdAt.split("-");
+    // console.log("atCreat--->", atCreat);
     res.render("shop/orders", {
       path: "/orders",
       pageTitle: "Your Orders",
@@ -175,18 +210,61 @@ exports.getInvoice = async (req, res, next) => {
     }
     const invoiceName = "invoice-" + orderId + ".pdf";
     const invoicePath = path.join("data", "invoices", invoiceName);
-    fs.readFile(invoicePath, (err, data) => {
-      if (err) {
-        console.log("getInvoice-->", err);
-        return next(err);
-      }
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        /*attachment*/ 'inline; filename="' + invoiceName + '"'
-      );
-      res.send(data);
+    const imagePath = path.join("privateImage", "ben.jpg");
+
+    const pdfDoc = new PDFDocument();
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      /*attachment*/ 'inline; filename="' + invoiceName + '"'
+    );
+    pdfDoc.pipe(fs.createWriteStream(invoicePath));
+    pdfDoc.pipe(res);
+
+    pdfDoc.fontSize(26).text("Invoice", { underline: true, align: "left" });
+
+    pdfDoc
+      .image(imagePath, {
+        fit: [300, 300],
+        valign: "center",
+      })
+      .fill("rgba(255, 255, 255, 0.5),", "even-odd"); // Dikdörtgenin içini beyazla doldurun (50% opaklık)
+
+    pdfDoc.text("---------------------------------");
+    let totalprice = 0;
+    order.products.forEach((prod) => {
+      totalprice += prod.quantity * prod.product.price;
+      pdfDoc
+        .fontSize(14)
+        .text(
+          prod.product.title +
+            " - " +
+            " $" +
+            prod.product.price +
+            " x " +
+            prod.quantity
+        );
     });
+    pdfDoc.text("--------");
+    pdfDoc.text(" ");
+    pdfDoc.fontSize(20).text("Total Price: $" + totalprice);
+
+    pdfDoc.end();
+    // fs.readFile(invoicePath, (err, data) => {
+    //   if (err) {
+    //     console.log("getInvoice-->", err);
+    //     return next(err);
+    //   }
+    //   res.setHeader("Content-Type", "application/pdf");
+    //   res.setHeader(
+    //     "Content-Disposition",
+    //     /*attachment*/ 'inline; filename="' + invoiceName + '"'
+    //   );
+    //   res.send(data);
+    // });
+    // const file = fs.createReadStream(invoicePath);
+
+    // file.pipe(res);
   } catch (error) {
     console.log("getInvoice-->", error);
     next(error);

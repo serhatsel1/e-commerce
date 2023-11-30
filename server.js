@@ -1,6 +1,7 @@
 const path = require("path");
 const dotenv = require("dotenv").config();
 
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
@@ -63,7 +64,7 @@ app.use(
 //! static olan css dosyaları için
 
 app.use(express.static("public"));
-app.use("/image",express.static("image"));
+app.use("/image", express.static("image"));
 
 app.use(
   session({

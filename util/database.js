@@ -1,12 +1,10 @@
 const mongodb = require("mongodb");
 const MongoClient = mongodb.MongoClient;
 
-let _db
+let _db;
 
 const mongoConnect = (callback) => {
-  MongoClient.connect(
-    "mongodb+srv://selserhat01:56530474958s@cluster0.vyic7gs.mongodb.net/shop?retryWrites=true&w=majority"
-  )
+  MongoClient.connect(process.env.MONGODB_URI)
     .then((result) => {
       console.log("Connected MngoDB !");
       // _db = client.db("test")
@@ -20,11 +18,11 @@ const mongoConnect = (callback) => {
 };
 
 const getDb = () => {
-  if(_db){
-    return _db
+  if (_db) {
+    return _db;
   }
-  throw "No database found !"
-}
+  throw "No database found !";
+};
 
 exports.mongoConnect = mongoConnect;
 exports.getDb = getDb;

@@ -1,5 +1,6 @@
-const product = require("../model/product");
 const Product = require("../model/product");
+const fileHelper = require("../util/file");
+
 exports.getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
@@ -136,6 +137,9 @@ exports.postEditProduct = async (req, res, next) => {
       // imageUrl: updatedImageUrl,
       userId: req.user._id,
     });
+    if (image) {
+      fileHelper.deleteFile(product.imageUrl);
+    }
 
     // Veritabanında güncelleme
     await updatedProduct.save();
@@ -214,9 +218,14 @@ exports.postDeleteProduct = async (req, res, next) => {
   const prodId = req.body.productId;
 
   try {
+    const product = await Product.findById(prodId);
+    if (!product) {
+      return next(new Error("Product Not Found"));
+    }
+    await fileHelper.deleteFile(product.imageUrl);
     await Product.deleteOne({ _id: prodId, userId: req.user._id });
     console.log("DESTROYED PRODUCT");
-    res.redirect("/admin/products");
+    res.redirect("/admin/product");
   } catch (error) {
     console.log("postDe leteProductError -->", error);
     error.httpStatusCode = 500;
