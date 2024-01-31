@@ -140,6 +140,25 @@ exports.postCartDelete = (req, res, next) => {
     });
 };
 
+exports.getCheckout = async (req, res, next) => {
+  const user = await User.findById(req.user._id).populate(
+    "cart.items.productId"
+  );
+
+  console.log("getCart", user.cart.items);
+  const products = user.cart.items;
+  let total = 0;
+  products.forEach((e) => {
+    total += e.quantity * e.productId.price;
+  });
+
+  res.render("shop/checkout", {
+    path: "/checkout",
+    pageTitle: "Checkout",
+    products: products,
+    totalSum: total,
+  });
+};
 exports.postOrder = async (req, res, next) => {
   try {
     const user = await req.user.populate("cart.items.productId");

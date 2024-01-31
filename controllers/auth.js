@@ -1,9 +1,8 @@
-const { error } = require("console");
 const User = require("../model/user");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-const { DATE } = require("sequelize");
+
 
 exports.getLogin = async (req, res, next) => {
   await res.render("auth/login", {
@@ -47,7 +46,7 @@ exports.postLogin = async (req, res, next) => {
       req.session.user = user;
       // save gerek yok fakat işi garantilemek için kullanılabilir
       return req.session.save((err) => {
-        console.log("postLoginSave-->", err);
+        // console.log("postLoginSave-->", err);
         res.redirect("/");
       });
     } else {
