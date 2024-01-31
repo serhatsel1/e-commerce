@@ -56,7 +56,7 @@ const err404Routes = require("./routes/errorPage");
 // const Cart = require("./model/cart");
 
 const hostName = "127.0.0.1";
-const port = 3000;
+const port = process.env.PORT;
 
 const accessLogStream = fs.createWriteStream(
   path.join(__dirname, "access.log"),
